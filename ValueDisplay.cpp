@@ -5,9 +5,6 @@
 #include "Adafruit_SSD1306.h"
 #include "Fonts/FreeSans9pt7b.h"
 
-char *byteString = (char *)malloc(3);
-byte oldValue = 0;
-
 void ValueDisplay::init()
 {
    showValue(0);
@@ -15,8 +12,15 @@ void ValueDisplay::init()
 
 char *hexString(byte value, char *buffer)
 {
-   sprintf(buffer, "%02X", value);
-   buffer[2] = (byte)0;
+   sprintf(buffer, "0x%02X", value);
+   buffer[4] = (byte)0;
+   return buffer;
+}
+
+char *decString(byte value, char *buffer)
+{
+   sprintf(buffer, "%03i", value);
+   buffer[3] = (byte)0;
    return buffer;
 }
 
@@ -25,14 +29,13 @@ void ValueDisplay::drawHex(byte value)
    int16_t x1, y1;
    uint16_t w, h;
 
-   char *hex = hexString(oldValue, byteString);
+   char *hex = hexString(_oldValue, _stringBuffer);
 
    _display->setCursor(_xLeft, _hexY);
-
-   _display->getTextBounds(byteString, _xLeft, _hexY, &x1, &y1, &w, &h);
+   _display->getTextBounds(_stringBuffer, _xLeft, _hexY, &x1, &y1, &w, &h);
    _display->fillRect(x1, y1, w, h, SSD1306_BLACK);
 
-   hex = hexString(value, byteString);
+   hex = hexString(value, _stringBuffer);
    _display->print(hex);
 }
 
@@ -41,11 +44,13 @@ void ValueDisplay::drawDec(byte value)
    int16_t x1, y1;
    uint16_t w, h;
 
-   _display->getTextBounds("XXX", _xLeft, _decY, &x1, &y1, &w, &h);
+   char *dec = decString(_oldValue, _stringBuffer);
+   _display->getTextBounds(dec, _xLeft, _decY, &x1, &y1, &w, &h);
    _display->fillRect(x1, y1, w, h, SSD1306_BLACK);
 
+   dec = decString(value, _stringBuffer);
    _display->setCursor(_xLeft, _decY);
-   _display->print(value);
+   _display->print(dec);
 }
 
 void ValueDisplay::drawBin(byte value)
@@ -76,14 +81,14 @@ ValueDisplay::ValueDisplay(int xLeft, int yTop, Adafruit_SSD1306 *display)
 
 void ValueDisplay::showValue(byte value)
 {
-   if (value != oldValue)
+   if (value != _oldValue)
    {
       drawHex(value);
       drawDec(value);
       drawBin(value);
 
       _display->display();
-   }
 
-   oldValue = value;
+      _oldValue = value;
+   }
 }

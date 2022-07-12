@@ -36,6 +36,6 @@ void loop()
       valueLeftDisplay->showValue(value);
       valueRightDisplay->showValue(255 - value);
 
-      delay(255);
+      delay(100);
    }
 }

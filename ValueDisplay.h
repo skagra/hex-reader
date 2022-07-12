@@ -18,6 +18,9 @@ private:
     int _hexY;
     int _decY;
 
+    byte _oldValue = 0;
+    char _stringBuffer[5];
+
     unsigned int _fontAdvance;
 
     void init();
