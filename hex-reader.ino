@@ -14,7 +14,7 @@ ValueDisplay *valueLeftDisplay;
 ValueDisplay *valueRightDisplay;
 
 #define CLOCK_INHIBIT_PIN 8  // CE pin 15
-#define SERIAL_DATA_IN_PIN 9 // Q9 pin 7
+#define SERIAL_DATA_IN_PIN 9 // Q9 pin 9
 #define CLOCK_PIN 10         // CP pin 2
 #define LOAD_INHIBIT_PIN 11  // PL pin 1
 
