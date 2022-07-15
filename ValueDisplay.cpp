@@ -3,54 +3,44 @@
 #include "Wire.h"
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1306.h"
-#include "Fonts/FreeSans9pt7b.h"
+
+#define CHAR_WIDTH 6
+#define CHAR_HEIGHT 8
+#define CHAR_GAP 3
 
 void ValueDisplay::init()
 {
    showValue(0);
 }
 
-char *hexString(byte value, char *buffer)
+void hexString(byte value, char *buffer)
 {
-   sprintf(buffer, "0x%02X", value);
+   sprintf(buffer, "H:%02X", value);
    buffer[4] = (byte)0;
-   return buffer;
 }
 
-char *decString(byte value, char *buffer)
+void decString(byte value, char *buffer)
 {
-   sprintf(buffer, "%03i", value);
-   buffer[3] = (byte)0;
-   return buffer;
+   sprintf(buffer, "D:%03i", value);
+   buffer[5] = (byte)0;
 }
 
 void ValueDisplay::drawHex(byte value)
 {
-   int16_t x1, y1;
-   uint16_t w, h;
+   _display->fillRect(_xLeft, _yTop, 4 * CHAR_WIDTH, CHAR_HEIGHT, SSD1306_BLACK);
 
-   char *hex = hexString(_oldValue, _stringBuffer);
-
-   _display->setCursor(_xLeft, _hexY);
-   _display->getTextBounds(_stringBuffer, _xLeft, _hexY, &x1, &y1, &w, &h);
-   _display->fillRect(x1, y1, w, h, SSD1306_BLACK);
-
-   hex = hexString(value, _stringBuffer);
-   _display->print(hex);
+   hexString(value, _stringBuffer);
+   _display->setCursor(_xLeft, _yTop);
+   _display->print(_stringBuffer);
 }
 
 void ValueDisplay::drawDec(byte value)
 {
-   int16_t x1, y1;
-   uint16_t w, h;
+   _display->fillRect(_xLeft + 4 * CHAR_WIDTH + CHAR_GAP, _yTop, 30, 7, SSD1306_BLACK);
 
-   char *dec = decString(_oldValue, _stringBuffer);
-   _display->getTextBounds(dec, _xLeft, _decY, &x1, &y1, &w, &h);
-   _display->fillRect(x1, y1, w, h, SSD1306_BLACK);
-
-   dec = decString(value, _stringBuffer);
-   _display->setCursor(_xLeft, _decY);
-   _display->print(dec);
+   decString(value, _stringBuffer);
+   _display->setCursor(_xLeft + 4 * CHAR_WIDTH + CHAR_GAP, _yTop);
+   _display->print(_stringBuffer);
 }
 
 void ValueDisplay::drawBin(byte value)
@@ -66,22 +56,16 @@ ValueDisplay::ValueDisplay(int xLeft, int yTop, Adafruit_SSD1306 *display)
    _yTop = yTop;
 
    _display->setTextWrap(false);
-
    _display->setTextColor(SSD1306_WHITE);
-   _display->setFont(&FreeSans9pt7b);
-   _fontAdvance = FreeSans9pt7b.yAdvance;
 
-   _hexY = _fontAdvance - 6;
-   _decY = _fontAdvance * 2 - 6;
-
-   _binaryDisplay = new BinaryDisplay(xLeft, _decY + 10, display);
+   _binaryDisplay = new BinaryDisplay(xLeft, _yTop + 12, display);
 
    init();
 }
 
 void ValueDisplay::showValue(byte value)
 {
-   if (value != _oldValue)
+   if (value != _oldValue || first)
    {
       drawHex(value);
       drawDec(value);
@@ -90,5 +74,6 @@ void ValueDisplay::showValue(byte value)
       _display->display();
 
       _oldValue = value;
+      first = false;
    }
 }

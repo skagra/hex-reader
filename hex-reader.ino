@@ -10,8 +10,10 @@
 #define SCREEN_ADDRESS 0x3C
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-ValueDisplay *valueLeftDisplay;
-ValueDisplay *valueRightDisplay;
+ValueDisplay *topLeftDisplay;
+ValueDisplay *topRightDisplay;
+ValueDisplay *bottomLeftDisplay;
+ValueDisplay *bottomRightDisplay;
 
 #define CLOCK_INHIBIT_PIN 8  // CE pin 15
 #define SERIAL_DATA_IN_PIN 9 // Q9 pin 9
@@ -40,8 +42,34 @@ void setup()
 
    // Set up display
    display.clearDisplay();
-   valueLeftDisplay = new ValueDisplay(0, 0, &display);
-   valueRightDisplay = new ValueDisplay(64, 0, &display);
+
+   topLeftDisplay = new ValueDisplay(0, 0, &display);
+   topRightDisplay = new ValueDisplay(SCREEN_WIDTH / 2, 0, &display);
+   bottomLeftDisplay = new ValueDisplay(0, SCREEN_HEIGHT / 2, &display);
+   bottomRightDisplay = new ValueDisplay(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, &display);
+}
+
+byte getHighNibble(byte value)
+{
+   return (value >> 4) & 0xF;
+}
+
+byte getLowNibble(byte value)
+{
+   return value & 0xF;
+}
+
+byte makeByte(byte highNibble, byte lowNibble)
+{
+   return highNibble << 4 | (lowNibble & 0xF);
+}
+
+byte reverseNibbleBits(byte nibble)
+{
+   return (nibble & 0x1) << 3 |
+          (nibble & 0x2) << 1 |
+          (nibble & 0x4) >> 1 |
+          (nibble & 0x8) >> 3;
 }
 
 void latchValue()
@@ -52,30 +80,33 @@ void latchValue()
    delayMicroseconds(PIN_DELAY_MICROS);
 }
 
-int16_t readByte()
+void readValue(byte result[])
 {
-   int16_t result = 0;
-
    // Ensure clock is high before getting data - else we'll miss the first bit
    digitalWrite(CLOCK_INHIBIT_PIN, HIGH);
    digitalWrite(CLOCK_PIN, HIGH);
 
-   // Grab a byte
+   // Grab current values byte
    digitalWrite(CLOCK_INHIBIT_PIN, LOW);
-   result = shiftIn(SERIAL_DATA_IN_PIN, CLOCK_PIN, LSBFIRST) << 8;
-   result |= shiftIn(SERIAL_DATA_IN_PIN, CLOCK_PIN, LSBFIRST);
+   result[0] = shiftIn(SERIAL_DATA_IN_PIN, CLOCK_PIN, LSBFIRST);
+   result[1] = shiftIn(SERIAL_DATA_IN_PIN, CLOCK_PIN, LSBFIRST);
+   result[2] = shiftIn(SERIAL_DATA_IN_PIN, CLOCK_PIN, LSBFIRST);
+   result[3] = shiftIn(SERIAL_DATA_IN_PIN, CLOCK_PIN, LSBFIRST);
    digitalWrite(CLOCK_INHIBIT_PIN, HIGH);
-
-   return result;
 }
 
 void loop()
 {
+   byte value[4];
+
    latchValue();
-   int16_t incoming = readByte();
+   readValue(value);
 
-   valueLeftDisplay->showValue((byte)(incoming >> 8));
-   valueRightDisplay->showValue((byte)incoming);
+   topLeftDisplay->showValue(makeByte(reverseNibbleBits(getHighNibble(value[3])), reverseNibbleBits(getHighNibble(value[2]))));
+   topRightDisplay->showValue(makeByte(reverseNibbleBits(getHighNibble(value[1])), reverseNibbleBits(getHighNibble(value[0]))));
 
-   delay(500);
+   bottomLeftDisplay->showValue(makeByte(getLowNibble(value[3]), getLowNibble(value[2])));
+   bottomRightDisplay->showValue(makeByte(getLowNibble(value[1]), getLowNibble(value[0])));
+
+   delay(100);
 }

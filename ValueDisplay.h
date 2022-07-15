@@ -15,13 +15,10 @@ private:
     int _xLeft;
     int _yTop;
 
-    int _hexY;
-    int _decY;
-
     byte _oldValue = 0;
-    char _stringBuffer[5];
+    bool first = true;
 
-    unsigned int _fontAdvance;
+    char _stringBuffer[6];
 
     void init();
     void drawHex(byte value);

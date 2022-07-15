@@ -12,6 +12,9 @@ private:
     int _xLeft;
     int _yTop;
 
+    byte _oldValue = 0;
+    bool first = true;
+
     void init();
 
     void drawFrame();

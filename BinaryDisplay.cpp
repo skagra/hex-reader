@@ -5,8 +5,6 @@
 
 const int CELL_SIZE = 7;
 
-#define ERROR_PERSISTENCE_MILLIS 300
-
 BinaryDisplay::BinaryDisplay(int xLeft, int yTop, Adafruit_SSD1306 *display)
 {
    _display = display;
@@ -39,13 +37,19 @@ void BinaryDisplay::drawCell(int cellIndex, bool set)
 
 void BinaryDisplay::showValue(byte value)
 {
-   int bitMask = 128;
-
-   for (int cell = 0; cell < 8; cell++)
+   if (value != _oldValue || first)
    {
-      bool set = value & bitMask;
-      drawCell(cell, set);
-      bitMask /= 2;
+      int bitMask = 128;
+
+      for (int cell = 0; cell < 8; cell++)
+      {
+         bool set = value & bitMask;
+         drawCell(cell, set);
+         bitMask /= 2;
+      }
+      _display->display();
+
+      first = false;
+      _oldValue = value;
    }
-   _display->display();
 }
