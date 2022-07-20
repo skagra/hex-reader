@@ -3,11 +3,27 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include "ValueDisplay.h"
+#include "Button.h"
+
+#define CLOCK_INHIBIT_PIN 8  // CE pin 15
+#define SERIAL_DATA_IN_PIN 9 // Q9 pin 9
+#define CLOCK_PIN 10         // CP pin 2
+#define LOAD_INHIBIT_PIN 11  // PL pin 1
+
+#define RUN_PIN PIN2
+#define SAMPLE_PIN PIN3
+
+#define PIN_DELAY_MICROS 5
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET -1    // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3C
+
+#define PULSE_SIZE 5
+
+#define LOOP_DELAY_MILLIS 100
+#define SAMPLE_DELAY_MILLIS 100
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 ValueDisplay *topLeftDisplay;
@@ -15,12 +31,20 @@ ValueDisplay *topRightDisplay;
 ValueDisplay *bottomLeftDisplay;
 ValueDisplay *bottomRightDisplay;
 
-#define CLOCK_INHIBIT_PIN 8  // CE pin 15
-#define SERIAL_DATA_IN_PIN 9 // Q9 pin 9
-#define CLOCK_PIN 10         // CP pin 2
-#define LOAD_INHIBIT_PIN 11  // PL pin 1
+Button *runButton;
+Button *sampleButton;
 
-#define PIN_DELAY_MICROS 5
+bool running = true;
+
+void runCallback(void *clientData)
+{
+   running = !running;
+}
+
+void sampleCallback(void *clientData)
+{
+   sample();
+}
 
 void setup()
 {
@@ -47,6 +71,9 @@ void setup()
    topRightDisplay = new ValueDisplay(SCREEN_WIDTH / 2, 0, &display);
    bottomLeftDisplay = new ValueDisplay(0, SCREEN_HEIGHT / 2, &display);
    bottomRightDisplay = new ValueDisplay(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, &display);
+
+   runButton = new Button(RUN_PIN, runCallback, (void *)0);
+   sampleButton = new Button(SAMPLE_PIN, sampleCallback, (void *)0);
 }
 
 byte getHighNibble(byte value)
@@ -95,18 +122,50 @@ void readValue(byte result[])
    digitalWrite(CLOCK_INHIBIT_PIN, HIGH);
 }
 
-void loop()
+void drawPulse()
+{
+   display.fillRect(SCREEN_WIDTH - PULSE_SIZE - 2, SCREEN_HEIGHT - PULSE_SIZE - 2, PULSE_SIZE, PULSE_SIZE, SSD1306_WHITE);
+   display.display();
+}
+
+void unDrawPulse()
+{
+   display.fillRect(SCREEN_WIDTH - PULSE_SIZE - 2, SCREEN_HEIGHT - PULSE_SIZE - 2, PULSE_SIZE, PULSE_SIZE, SSD1306_BLACK);
+   display.display();
+}
+
+void sample()
 {
    byte value[4];
 
+   drawPulse();
+
    latchValue();
    readValue(value);
-
    topLeftDisplay->showValue(makeByte(reverseNibbleBits(getHighNibble(value[3])), reverseNibbleBits(getHighNibble(value[2]))));
    topRightDisplay->showValue(makeByte(reverseNibbleBits(getHighNibble(value[1])), reverseNibbleBits(getHighNibble(value[0]))));
-
    bottomLeftDisplay->showValue(makeByte(getLowNibble(value[3]), getLowNibble(value[2])));
    bottomRightDisplay->showValue(makeByte(getLowNibble(value[1]), getLowNibble(value[0])));
 
-   delay(100);
+   delay(SAMPLE_DELAY_MILLIS);
+
+   unDrawPulse();
+
+   delay(SAMPLE_DELAY_MILLIS);
+}
+
+void loop()
+{
+   if (running)
+   {
+      sample();
+   }
+   else
+   {
+      sampleButton->tick();
+   }
+
+   runButton->tick();
+
+   delay(LOOP_DELAY_MILLIS);
 }
