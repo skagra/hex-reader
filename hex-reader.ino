@@ -5,13 +5,13 @@
 #include "ValueDisplay.h"
 #include "Button.h"
 
-#define CLOCK_INHIBIT_PIN 8  // CE pin 15
-#define SERIAL_DATA_IN_PIN 9 // Q9 pin 9
-#define CLOCK_PIN 10         // CP pin 2
-#define LOAD_INHIBIT_PIN 11  // PL pin 1
+#define CLOCK_INHIBIT_PIN 9   // CE pin 15
+#define SERIAL_DATA_IN_PIN 10 // Q9 pin 9
+#define CLOCK_PIN 11          // CP pin 2
+#define LOAD_INHIBIT_PIN 12   // PL pin 1
 
-#define RUN_PIN PIN2
-#define SAMPLE_PIN PIN3
+#define RUN_PIN 3
+#define SAMPLE_PIN 2
 
 #define PIN_DELAY_MICROS 5
 
@@ -142,10 +142,11 @@ void sample()
 
    latchValue();
    readValue(value);
-   topLeftDisplay->showValue(makeByte(reverseNibbleBits(getHighNibble(value[3])), reverseNibbleBits(getHighNibble(value[2]))));
-   topRightDisplay->showValue(makeByte(reverseNibbleBits(getHighNibble(value[1])), reverseNibbleBits(getHighNibble(value[0]))));
-   bottomLeftDisplay->showValue(makeByte(getLowNibble(value[3]), getLowNibble(value[2])));
-   bottomRightDisplay->showValue(makeByte(getLowNibble(value[1]), getLowNibble(value[0])));
+
+   topLeftDisplay->showValue(makeByte(getLowNibble(value[3]), reverseNibbleBits(getHighNibble(value[3]))));
+   topRightDisplay->showValue(makeByte(getLowNibble(value[2]), reverseNibbleBits(getHighNibble(value[2]))));
+   bottomLeftDisplay->showValue(makeByte(getLowNibble(value[1]), reverseNibbleBits(getHighNibble(value[1]))));
+   bottomRightDisplay->showValue(makeByte(getLowNibble(value[0]), reverseNibbleBits(getHighNibble(value[0]))));
 
    delay(SAMPLE_DELAY_MILLIS);
 
