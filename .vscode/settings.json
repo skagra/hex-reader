@@ -3,6 +3,7 @@
         "Adafruit",
         "Ardiuno",
         "GPIO",
+        "LSBFIRST",
         "MILLIS",
         "OLED",
         "SWITCHCAPVCC"
